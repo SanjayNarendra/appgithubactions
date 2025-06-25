@@ -1,0 +1,67 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+# we need to write in the form of key:value pairs in a yaml file
+# GitHub Actions supports some things when you write in key:value pairs
+name: Python application  # workflow name
+
+# in order to trigger a workflow, we need to define events such as push, pull, merge, delete wrt to github
+# to trigger a workflow, we need to write all the events on "on:" this keyword
+on:
+  push:    # this is an event
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+    # it mean whenever we are doing push or pull request on branches like main - 2 events
+    # we can also have any no of branches such as staging, production...
+
+permissions:
+  contents: read
+
+
+jobs:       # jobs will be running in a container
+  build:
+
+    runs-on: ubuntu-latest   # we are running test cases (here) on ubuntu-latest container 
+    # GitHub provides containers where we can run entire application and test it
+    # we also have windows, mac-os containers and can be specified here if we want
+
+    steps:
+    # each of these block (name, uses) is a workflow step
+    # Step 1: Check out the code from repository
+    - name: Check out code
+      uses: actions/checkout@v4  # this is the pre-built action defined by GitHub where we are going to check out the code
+      # actions/checkout@v4  is basically triggering an event wherein we take code from the repo 
+      # and check it so that it can be moved towards the container and tested there
+
+    # Step 2: Set up python environment
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3  # this action is provided by GitHub Action
+      with:
+        python-version: "3.10"
+    # we will use the action "actions/setup-python@v3" to create a python environment with specific
+    # python version using "with" keyword
+    
+    # Step 3: Install dependencies
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip  
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    # In this step we need to install all the dependencies say here we need to install pytest 
+    # in the container to run all the test use cases
+    # in runs: we run commands
+
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    # Step 4: Run tests
+    - name: Test with pytest
+      run: |
+        pytest
+    # as soon as this command is run in the container, it will start looking for the test folder
+    # and execute all the unit test cases
